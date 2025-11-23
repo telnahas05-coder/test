@@ -1,0 +1,7 @@
+{
+  "name": "Dream Images AI Repairer",
+  "description": "AI-powered photo restoration application. Restore old photos, colorize black & white images, and change backgrounds interactively using Gemini.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
