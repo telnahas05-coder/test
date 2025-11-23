@@ -1,17 +1,25 @@
 import { GoogleGenAI } from "@google/genai";
 
-// Declare process to avoid TypeScript errors and handle browser environments where it might be missing
+// Declare process to avoid TypeScript errors
 declare var process: any;
 
 /**
  * Helper to get the AI client instance.
- * Initializing lazily prevents top-level crashes if process.env is not ready immediately.
- * Added safety check for 'process' to prevent ReferenceError in browser environments.
+ * Handles browser environments safely where process might be undefined.
  */
 const getAiClient = () => {
-  const apiKey = (typeof process !== 'undefined' && process.env) ? process.env.API_KEY : '';
+  let apiKey = '';
+  try {
+    // Check if process and process.env exist safely
+    if (typeof process !== 'undefined' && process.env && process.env.API_KEY) {
+      apiKey = process.env.API_KEY;
+    }
+  } catch (e) {
+    console.warn("Could not access process.env. Ensure you are using a build tool that injects API_KEY.");
+  }
+
   if (!apiKey) {
-    console.warn("API Key is missing or process.env is not accessible.");
+    console.warn("API Key is missing. The app will likely fail to generate images.");
   }
   return new GoogleGenAI({ apiKey: apiKey });
 };
@@ -50,17 +58,14 @@ export const processPhoto = async (
              fullPrompt = `Act as a STRICT biometric passport photography expert.
              Task: Generate a compliant standard Passport/ID photo from the source image.
 
-             STRICT RULES (ZERO CREATIVITY ALLOWED):
-             1. BACKGROUND: MUST be 100% SOLID WHITE. No shadows, no gradients, no patterns.
-             2. FACE: Preserving exact identity is #1 priority. Do NOT beautify. Do NOT change features.
-             3. POSE: Face must be straight towards the camera. Eyes open, mouth closed (neutral expression).
-             4. LIGHTING: Flat, even lighting. NO shadows on the face or background.
-             5. ATTIRE: Keep the person's clothing professional. If the original clothing is casual, neaten it up but keep it realistic.
-             6. QUALITY: High resolution, sharp focus on the eyes.
+             CRITICAL REGULATIONS (FOLLOW STRICTLY):
+             1. BACKGROUND: MUST be Pure White (#FFFFFF). Flat, solid color. NO shadows, NO patterns, NO gradients.
+             2. LIGHTING: Flat, even lighting on the face. NO shadows on the face (under eyes/nose) or background.
+             3. POSE: Frontal view. Head centered. Eyes looking directly at the camera.
+             4. FACE: NEUTRAL expression. Mouth closed. Eyes open. Do NOT use "beauty filters". Preserve exact facial landmarks and identity.
+             5. CROPPING: Head and top of shoulders only.
              
-             NEGATIVE PROMPT constraints: Do not generate a new person. Do not add makeup. Do not use artistic lighting. Do not crop the head too tight.
-             
-             Output: A formal, official biometric passport photo.`;
+             Output: A professional, biometric-compliant ID photo suitable for official documents.`;
         } else if (theme.startsWith('Age:')) {
              const ageTarget = theme.replace('Age: ', '');
              let ageDesc = "";
